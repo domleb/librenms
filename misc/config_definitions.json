@@ -4315,6 +4315,13 @@
             "section": "influxdb",
             "order": 8
         },
+        "influxdb.batch_size": {
+            "default": 0,
+            "type": "integer",
+            "group": "poller",
+            "section": "influxdb",
+            "order": 9
+        },
 	"influxdbv2.enable": {
             "default": false,
             "type": "boolean",

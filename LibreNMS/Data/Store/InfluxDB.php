@@ -37,11 +37,14 @@ class InfluxDB extends BaseDatastore
 {
     /** @var \InfluxDB\Database */
     private $connection;
+    private $batchPoints = []; // Store points before writing
+    private $batchSize = 0; // Number of points to write at once
 
     public function __construct(Database $influx)
     {
         parent::__construct();
         $this->connection = $influx;
+        $this->batchSize = Config::get('influxdb.batch_size', 0);
 
         // if the database doesn't exist, create it.
         try {
@@ -51,6 +54,9 @@ class InfluxDB extends BaseDatastore
         } catch (\Exception $e) {
             Log::warning('InfluxDB: Could not create database');
         }
+
+        // Ensure batch is flushed on script exit
+        register_shutdown_function([$this, 'flushBatch']);
     }
 
     public function getName()
@@ -112,20 +118,38 @@ class InfluxDB extends BaseDatastore
         ]);
 
         try {
-            $points = [
-                new \InfluxDB\Point(
-                    $measurement,
-                    null, // the measurement value
-                    $tmp_tags,
-                    $tmp_fields // optional additional fields
-                ),
-            ];
+            $this->batchPoints[] = new \InfluxDB\Point(
+                $measurement,
+                null, // the measurement value 
+                $tmp_tags,
+                $tmp_fields // optional additional fields
+            );
 
-            $this->connection->writePoints($points);
+            // Flush batch if size limit is reached
+            if (count($this->batchPoints) >= $this->batchSize) {
+                $this->flushBatch();
+            }
+
             $this->recordStatistic($stat->end());
         } catch (\InfluxDB\Exception $e) {
             Log::error('InfluxDB exception: ' . $e->getMessage());
             Log::debug($e->getTraceAsString());
+        }
+    }
+
+    /**
+     * Flush the batch to InfluxDB
+     */
+    public function flushBatch()
+    {
+        if (!empty($this->batchPoints)) {
+            try {
+                $this->connection->writePoints($this->batchPoints);
+                Log::debug('Flushed batch of ' . count($this->batchPoints) . ' points to InfluxDB');
+                $this->batchPoints = []; // Clear batch after writing
+            } catch (\InfluxDB\Exception $e) {
+                Log::error('InfluxDB batch write failed: ' . $e->getMessage());
+            }
         }
     }
 
