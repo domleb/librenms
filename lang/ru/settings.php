@@ -1027,6 +1027,14 @@ return [
                 'description' => 'Проверка SSL',
                 'help' => 'Проверяет, что SSL-сертификат действителен и доверен',
             ],
+            'batch_size' => [
+                'description' => 'Batch Size',
+                'help' => 'Number of metrics to send in a single batch, 0 means no batching',
+            ],
+            'measurements' => [
+                'description' => 'Measurements',
+                'help' => 'Comma separated list of measurements to send to InfluxDB, leave empty to send all',
+            ],
         ],
         'influxdbv2' => [
             'bucket' => [
