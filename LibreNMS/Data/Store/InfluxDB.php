@@ -39,12 +39,16 @@ class InfluxDB extends BaseDatastore
     private $connection;
     private $batchPoints = []; // Store points before writing
     private $batchSize = 0; // Number of points to write at once
+    private $measurements = []; // List of measurements to write
 
     public function __construct(Database $influx)
     {
         parent::__construct();
         $this->connection = $influx;
         $this->batchSize = Config::get('influxdb.batch_size', 0);
+
+        $measurements = Config::get('influxdb.measurements', '');
+        $this->measurements = $measurements === '' ? [] : explode(',', $measurements);
 
         // if the database doesn't exist, create it.
         try {
@@ -86,6 +90,12 @@ class InfluxDB extends BaseDatastore
      */
     public function put($device, $measurement, $tags, $fields)
     {
+
+        // Check if this measurement is enabled
+        if (!empty($this->measurements) && !in_array($measurement, $this->measurements)) {
+            return;
+        }
+
         $stat = Measurement::start('write');
         $tmp_fields = [];
         $tmp_tags['hostname'] = $device['hostname'];
@@ -107,7 +117,6 @@ class InfluxDB extends BaseDatastore
 
         if (empty($tmp_fields)) {
             Log::warning('All fields empty, skipping update', ['orig_fields' => $fields]);
-
             return;
         }
 

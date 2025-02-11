@@ -4322,6 +4322,13 @@
             "section": "influxdb",
             "order": 9
         },
+        "influxdb.measurements": {
+            "default": "",
+            "type": "text",
+            "group": "poller",
+            "section": "influxdb",
+            "order": 10
+        },
 	"influxdbv2.enable": {
             "default": false,
             "type": "boolean",
