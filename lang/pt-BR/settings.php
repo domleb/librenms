@@ -940,6 +940,10 @@ return [
                 'description' => 'Verificar SSL',
                 'help' => 'Verificar se o certificado SSL é válido e confiável',
             ],
+            'batch_size' => [
+                'description' => 'Batch Size',
+                'help' => 'Number of metrics to send in a single batch, 0 means no batching',
+            ],
         ],
         'influxdbv2' => [
             'bucket' => [

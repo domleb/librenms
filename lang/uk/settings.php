@@ -856,6 +856,10 @@ return [
                 'description' => 'Перевіряти SSL',
                 'help' => 'Перевіряти чи сертифікат SSL валідний та довірений',
             ],
+            'batch_size' => [
+                'description' => 'Batch Size',
+                'help' => 'Number of metrics to send in a single batch, 0 means no batching',
+            ],
         ],
         'ipmitool' => [
             'description' => 'Шлях до ipmitool',
