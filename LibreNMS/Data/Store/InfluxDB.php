@@ -130,8 +130,8 @@ class InfluxDB extends BaseDatastore
 
             // Add timestamp to points if batch size is > 0
             $timestamp = null;
-            if ($this->batchsize > 0) {
-                $timestamp = microtime(true) * 1000000000;
+            if ($this->batchSize > 0) {
+                $timestamp = number_format(microtime(true) * 1000000000, 0, '', '');
             }
 
             $this->batchPoints[] = new \InfluxDB\Point(
