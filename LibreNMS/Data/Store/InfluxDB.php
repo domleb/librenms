@@ -131,7 +131,7 @@ class InfluxDB extends BaseDatastore
             // Add timestamp to points if batch size is > 0
             $timestamp = null;
             if ($this->batchSize > 0) {
-                $timestamp = microtime(true) * 1000000000;
+                $timestamp = (int)floor(microtime(true) * 1000);
             }
 
             $this->batchPoints[] = new \InfluxDB\Point(
@@ -161,7 +161,7 @@ class InfluxDB extends BaseDatastore
     {
         if (!empty($this->batchPoints)) {
             try {
-                $this->connection->writePoints($this->batchPoints);
+                $this->connection->writePoints($this->batchPoints,"ms"); // Added timestamps are in milliseconds
                 Log::debug('Flushed batch of ' . count($this->batchPoints) . ' points to InfluxDB');
                 $this->batchPoints = []; // Clear batch after writing
             } catch (\InfluxDB\Exception $e) {
