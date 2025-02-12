@@ -127,11 +127,19 @@ class InfluxDB extends BaseDatastore
         ]);
 
         try {
+
+            // Add timestamp to points if batch size is > 0
+            $timestamp = null;
+            if ($this->batchsize > 0) {
+                $timestamp = microtime(true) * 1000000000;
+            }
+
             $this->batchPoints[] = new \InfluxDB\Point(
                 $measurement,
                 null, // the measurement value 
                 $tmp_tags,
-                $tmp_fields // optional additional fields
+                $tmp_fields, // optional additional fields,
+                $timestamp
             );
 
             // Flush batch if size limit is reached
