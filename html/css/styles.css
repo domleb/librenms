@@ -11,10 +11,6 @@ body {
   overflow-y: scroll;
 }
 
-ul { margin: 0px; padding: 0px; list-style: disc outside; }
-ul ul { list-style: circle outside; }
-ul ul ul { list-style: square outside; }
-
 .rounded-2px {
   /* Rounded Corners */
   -moz-border-radius: 2px;
@@ -1636,7 +1632,7 @@ tr.search:nth-child(odd) {
 nav.navbar-sticky-top {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
   border-bottom-width: 2px;
   border-left-width: 0;
   border-top-width: 0;
