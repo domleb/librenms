@@ -47,9 +47,7 @@ class InfluxDB extends BaseDatastore
         parent::__construct();
         $this->connection = $influx;
         $this->batchSize = Config::get('influxdb.batch_size', 0);
-
-        $measurements = Config::get('influxdb.measurements', '');
-        $this->measurements = $measurements === '' ? [] : explode(',', $measurements);
+        $this->measurements = Config::get('influxdb.measurements', []);
 
         // if the database doesn't exist, create it.
         try {
@@ -59,17 +57,20 @@ class InfluxDB extends BaseDatastore
         } catch (\Exception $e) {
             Log::warning('InfluxDB: Could not create database');
         }
-
-        // Ensure batch is flushed on script exit
-        register_shutdown_function([$this, 'flushBatch']);
     }
 
-    public function getName()
+    public function terminate(): void
+    {
+        // Ensure any remaining points are written before the script ends
+        $this->flushBatch();
+    }
+
+    public function getName(): string
     {
         return 'InfluxDB';
     }
 
-    public static function isEnabled()
+    public static function isEnabled(): bool
     {
         return Config::get('influxdb.enable', false);
     }
@@ -93,7 +94,7 @@ class InfluxDB extends BaseDatastore
     {
 
         // Check if this measurement is enabled
-        if (!empty($this->measurements) && !in_array($measurement, $this->measurements)) {
+        if (! empty($this->measurements) && ! in_array($measurement, $this->measurements)) {
             return;
         }
 
@@ -121,23 +122,15 @@ class InfluxDB extends BaseDatastore
             return;
         }
 
-        Log::debug('InfluxDB data: ', [
-            'measurement' => $measurement,
-            'tags' => $tmp_tags,
-            'fields' => $tmp_fields,
-        ]);
-
         try {
-
-            // Add timestamp to points if batch size is > 0
-            $timestamp = null;
-            if ($this->batchSize > 0) {
-                $timestamp = (int)floor(microtime(true) * 1000); // Convert timestamp to milliseconds
-            }
+            // Add timestamp to points as current time in milliseconds
+            // This is important for InfluxDB to correctly order and store the data
+            // This is especially important for batch writes to ensure data is aggregated correctly
+            $timestamp = (int) floor(microtime(true) * 1000); // Convert timestamp to milliseconds
 
             $this->batchPoints[] = new \InfluxDB\Point(
                 $measurement,
-                null, // the measurement value 
+                null, // the measurement value
                 $tmp_tags,
                 $tmp_fields, // optional additional fields,
                 $timestamp
@@ -160,15 +153,19 @@ class InfluxDB extends BaseDatastore
      */
     public function flushBatch()
     {
-        if (!empty($this->batchPoints)) {
-            try {
-                $this->connection->writePoints($this->batchPoints,"ms"); // Added timestamps are in milliseconds
-                Log::debug('Flushed batch of ' . count($this->batchPoints) . ' points to InfluxDB');
-                $this->batchPoints = []; // Clear batch after writing
-            } catch (\InfluxDB\Exception $e) {
-                Log::error('InfluxDB batch write failed: ' . $e->getMessage());
-            }
+        if (empty($this->batchPoints)) {
+            // No points to write, nothing to do
+            return;
         }
+        if (Config::get('influxdb.debug', false) === true) {
+            Log::debug('Flushing InfluxDB batch of ' . count($this->batchPoints) . ' points');
+        }
+        try {
+            $this->connection->writePoints($this->batchPoints, 'ms'); // Added timestamps are in milliseconds
+        } catch (\InfluxDB\Exception $e) {
+            Log::error('InfluxDB batch write failed: ' . $e->getMessage());
+        }
+        $this->batchPoints = []; // Clear the batch after writing
     }
 
     /**

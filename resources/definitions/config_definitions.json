@@ -4508,13 +4508,24 @@
             "order": 9
         },
         "influxdb.measurements": {
-            "default": "",
-            "type": "text",
+            "default": [],
+            "type": "array",
+            "validate": {
+                "value": "array",
+                "value.*": "string"
+            },
             "group": "poller",
             "section": "influxdb",
             "order": 10
         },
-	"influxdbv2.enable": {
+        "influxdb.debug": {
+            "default": false,
+            "type": "boolean",
+            "group": "poller",
+            "section": "influxdb",
+            "order": 11
+        },
+        "influxdbv2.enable": {
             "default": false,
             "type": "boolean",
             "group": "poller",
