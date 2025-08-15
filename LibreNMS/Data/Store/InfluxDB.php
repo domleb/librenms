@@ -158,7 +158,7 @@ class InfluxDB extends BaseDatastore
             return;
         }
         if (Config::get('influxdb.debug', false) === true) {
-            Log::debug('Flushing InfluxDB batch of ' . count($this->batchPoints) . ' points');
+            Log::info('Flushing InfluxDB batch of ' . count($this->batchPoints) . ' points');
         }
         try {
             $this->connection->writePoints($this->batchPoints, 'ms'); // Added timestamps are in milliseconds
